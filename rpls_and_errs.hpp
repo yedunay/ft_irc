@@ -1,5 +1,5 @@
-#ifndef RPLS_AND_ERRS_H
-# define RPLS_AND_ERRS_H
+#ifndef RPLS_AND_ERRS_HPP
+# define RPLS_AND_ERRS_HPP
 
 // RPL (Reply) Messages
 #define RPL_WELCOME(serverName, nick, user, host)          ":" + serverName + " 001 " + nick + " :Welcome to the Internet Relay Network " + nick + "!" + user + "@" + host
@@ -24,6 +24,8 @@
 
 #define ERR_NOSUCHCHANNEL(source, channel)                  ": 403 " + source + " " + channel + " :No such channel"
 #define ERR_CHANOPRIVSNEEDED(client, channel)               ": 482 " + client + " " + channel + " :You're not channel operator"
+#define ERR_CANNOTREMOVEOPERATOR(client, channel)           ":" + client + " 485 " + client + " " + channel + " :You cannot remove yourself as an operator, you are the only operator in the channel."
+#define ERR_CANNOTLEAVEASADMIN(client, channel)             ":" + client + " 485 " + client + " " + channel + " :You are an admin of the channel; you cannot leave."
 #define ERR_NEEDMOREPARAMS(client, command)                 ": 461 " + client + " " + command + " :Not enough parameters"
 #define ERR_CHANNELISFULL(client, channel)                  ": 471 " + client + " " + channel + " :Channel is full"
 #define ERR_INVITEONLYCHAN(client, channel)                 ": 473 " + client + " " + channel + " :Cannot join channel (+i)"
@@ -39,7 +41,7 @@
 
 // -JOIN ERRORS-
 #define ERR_BADCHANMASK(client, channel)                    ": 476 " + client + " " + channel + " :Bad Channel Mask"
-#define ERR_USERONCHANNEL(client, invited, channel)         ": 443 " + client + " " + invited + " " + channel + " :is already on channel"
+#define ERR_USERONCHANNEL(client, channel) (":" + client + " 443 " + client + " " + channel + " :You are already on the channel.")
 #define ERR_NOTREGISTERED(client)                           ": 451 " + client + " :You have not registered"
 
 // -MODE ERRORS-
@@ -60,6 +62,7 @@
 #define ERR_NORECIPIENT(client)                             ": 411 " + client + " :No recipient given"
 #define ERR_NOTEXTTOSEND(client)                            ": 412 " + client + " :No text to send"
 #define ERR_NOTOPLEVEL(client)                              ": 413 " + client + " :No toplevel domain specified"
+#define ERR_CANNOTSENDTOCHAN(nickname, channel)             ": 404 " + nickname + " " + channel + " : You are not in the channel"
 #define ERR_WILDTOPLEVEL(client)                            ": 414 " + client + " :Wildcard in toplevel domain"
 #define ERR_TOOMANYTARGETS(client)                          ": 407 " + client + " :Too many recipients"
 

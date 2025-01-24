@@ -93,9 +93,7 @@ std::string Channel::getUsersNames()
     }
 
     if (!usersNames.empty() && usersNames[usersNames.size() - 1] == ' ')
-    {
         usersNames.resize(usersNames.size() - 1);
-    }
     return usersNames;
 }
 
@@ -122,7 +120,7 @@ bool Channel::IsClient(Client &client)
     return user != _clients.end();
 }
 
-bool Channel::IsClient(std::string &nickname)
+bool Channel::IsClient(const std::string &nickname)
 {
     for (size_t i = 0; i < _clients.size(); ++i)
     {

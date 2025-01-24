@@ -96,7 +96,7 @@ void Server::acceptClient()
 	clientPollFd.events = POLLIN;
 	clientPollFd.revents = 0;
 	_pollFds.push_back(clientPollFd);
-	_clients.insert(std::make_pair(clientSocket, Client(clientSocket)));
+	_clients[clientSocket] = Client(clientSocket);
     std::cout << "Client " << clientSocket << " connected." << std::endl;
     _clients[clientSocket].MsgToClient("Welcome to the server!");
 }

@@ -1,11 +1,25 @@
 #include "ft_irc.hpp"
 
+size_t Channel::countOperators(Channel &channel) const {
+    size_t count = 0;
+    std::vector<Client*>::const_iterator it;
+    const std::vector<Client*>& channelClients = channel.getClients();
+    
+    for (it = channelClients.begin(); it != channelClients.end(); ++it)
+    {
+        if (channel.IsOperator(**it))
+            count++;
+    }
+    return count;
+}
+
 void    o(Channel &channel, Client &client, std::vector<std::string> &cmd)
 {
-
     try
     {
         Client &newOperator = channel.getClient(cmd[3]);
+        size_t operatorCount = channel.countOperators(channel);
+        
         if (cmd[2][0] == '+' && cmd.size() == 4)
         {
             newOperator.MsgToClient(RPL_MODE(client.getPrefixName(), cmd[1], "+o ", cmd[3]));
@@ -14,45 +28,33 @@ void    o(Channel &channel, Client &client, std::vector<std::string> &cmd)
             std::string endOfNamesMessage = RPL_ENDOFNAMES(client.getPrefixName(), cmd[1]);
             channel.Brodcast(nameReplyMessage);
             channel.Brodcast(endOfNamesMessage);
-            return ;
+            return;
         }
         else if (cmd[2][0] == '-' && cmd.size() == 4)
         {
+            if (operatorCount == 1 && channel.IsOperator(newOperator))
+            {
+                client.MsgToClient(ERR_CANNOTREMOVEOPERATOR(client.getNickname(), cmd[1]));
+                return;
+            }
+            
             newOperator.MsgToClient(RPL_MODE(client.getPrefixName(), cmd[1], "-o ", cmd[3]));
             channel.OperatorRemove(newOperator);
             std::string nameReplyMessage = RPL_NAMREPLY(client.getPrefixName(), cmd[1], channel.getUsersNames());
             std::string endOfNamesMessage = RPL_ENDOFNAMES(client.getPrefixName(), cmd[1]);
             channel.Brodcast(nameReplyMessage);
             channel.Brodcast(endOfNamesMessage);
-            return ;
+            return;
         }
         else
+        {
             client.MsgToClient(ERR_NEEDMOREPARAMS(client.getNickname(), cmd[0]));
+        }
     }
     catch(const std::exception& e)
     {
         std::cerr << e.what() << '\n';
     }
-}
-
-void t(Channel &channel, Client &client, std::vector<std::string> &cmd)
-{
-
-    std::string modeMessage;
-    if (cmd[2][0] == '+' && cmd.size() == 3)
-    {
-        modeMessage = RPL_MODEONE(client.getPrefixName(), cmd[1], "+t");
-        channel.setFlags('t', true);
-        channel.Brodcast(modeMessage);
-    }
-    else if (cmd[2][0] == '-' && cmd.size() == 3)
-    {
-        modeMessage =  RPL_MODEONE(client.getPrefixName(), cmd[1], "-t");
-        channel.setFlags('t', false);
-        channel.Brodcast(modeMessage);
-    }
-    else
-        client.MsgToClient(ERR_NEEDMOREPARAMS(client.getNickname(), cmd[0]));
 }
 
 void    l(Channel &channel, Client &client, std::vector<std::string> cmd)
@@ -104,20 +106,16 @@ void i(Channel &channel, Client &client, std::vector<std::string> cmd)
     std::string modeMessage;
     if (cmd[2][0] == '+')
     {
-        if (cmd.size() == 4)
-        {
-            modeMessage = RPL_MODE(client.getPrefixName(), cmd[1], "+i", cmd[3]);
-            channel.setFlags('i', true);
-            channel.setInvite(cmd[3]);
-            channel.Brodcast(modeMessage);
-        }
-        else if (cmd.size() == 3)
+        if (cmd.size() == 3 || cmd.size() == 4)
         {
             modeMessage = RPL_MODEONE(client.getPrefixName(), cmd[1], "+i");
             channel.setFlags('i', true);
+            if (cmd.size() == 4){
+                modeMessage = RPL_MODE(client.getPrefixName(), cmd[1], "+i", cmd[3]);
+                channel.setInvite(cmd[3]);
+            }
             channel.Brodcast(modeMessage);
-        };
-
+        }
     }
     else if (cmd[2][0] == '-')
     {
@@ -140,6 +138,26 @@ void i(Channel &channel, Client &client, std::vector<std::string> cmd)
             channel.setFlags('i', false);
             channel.Brodcast(modeMessage);
         };
+    }
+    else
+        client.MsgToClient(ERR_NEEDMOREPARAMS(client.getNickname(), cmd[0]));
+}
+
+void t(Channel &channel, Client &client, std::vector<std::string> &cmd)
+{
+
+    std::string modeMessage;
+    if (cmd[2][0] == '+' && cmd.size() == 3)
+    {
+        modeMessage = RPL_MODEONE(client.getPrefixName(), cmd[1], "+t");
+        channel.setFlags('t', true);
+        channel.Brodcast(modeMessage);
+    }
+    else if (cmd[2][0] == '-' && cmd.size() == 3)
+    {
+        modeMessage =  RPL_MODEONE(client.getPrefixName(), cmd[1], "-t");
+        channel.setFlags('t', false);
+        channel.Brodcast(modeMessage);
     }
     else
         client.MsgToClient(ERR_NEEDMOREPARAMS(client.getNickname(), cmd[0]));

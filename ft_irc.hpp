@@ -19,7 +19,7 @@
 #include <csignal>  // signal
 #include <string>
 #include <cstddef> // size_t
-#include "rpls_and_errs.h"
+#include "rpls_and_errs.hpp"
 
 // ### CLASSES ###
 
@@ -95,12 +95,13 @@ class Channel
 		Client					&getClient(std::string target);
 		std::string				getSizeClient() const;
 		std::string				getPassword() const;
+		size_t countOperators(Channel &channel) const;
 
 		bool	IsFlags(char c);
 		bool	IsOperator(Client &client);
 		bool 	IsOperator(std::string &op);
 		bool	IsClient(Client &client);
-		bool	IsClient(std::string &client);
+		bool	IsClient(const std::string &client);
 		bool	IsInvites(const std::string &invited);
 
 		void	setPassword(std::string password);

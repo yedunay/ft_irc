@@ -15,11 +15,21 @@ void Part(std::map<std::string, Channel>& channels, Client& client, std::vector<
 
     Channel& channel = channels[channelName];
     if (channel.IsClient(client)) {
+        size_t operatorCount = channel.countOperators(channel);
+        bool isClientOperator = channel.IsOperator(client);
+        bool isLastClient = (channel.getSizeClient() == "1");
+
+        if (isClientOperator && operatorCount == 1 && !isLastClient) {
+            client.MsgToClient(ERR_CANNOTLEAVEASADMIN(client.getNickname(), channelName));
+            return;
+        }
+
         channel.Brodcast(RPL_PART(client.getPrefixName(), channelName));
-        if (channel.IsOperator(client))
+        if (isClientOperator)
             channel.OperatorRemove(client);
         channel.ClientRemove(client);
-        if (channel.getSizeClient() == "0")
+        
+        if (isLastClient)
             channels.erase(channelName);
     } else {
         client.MsgToClient(ERR_NOTONCHANNEL(client.getNickname(), channelName));
@@ -118,38 +128,41 @@ void Quit(std::map<std::string, Channel> &channels, std::map<int, Client>& clien
 
 void Privmsg(Client client, std::vector<std::string> &cmd, std::map<std::string, Channel> channels, std::map<int, Client>& clients)
 {
-	std::string privMessage;
-	if (cmd.size() == 1)
-	{
-		throw ERR_NORECIPIENT(client.getNickname());
-	}
-	else if (cmd[1].find(',') != std::string::npos)
-		throw ERR_TOOMANYTARGETS(client.getNickname());
-	else if (cmd.size() == 2)
-		throw ERR_NOTEXTTOSEND(client.getNickname());
-	else if (cmd[1][0] == '#')
-	{
-		if (channels.find(cmd[1]) == channels.end())
-			throw (ERR_NOTOPLEVEL(client.getNickname()));
-		else
-		{
-			privMessage = RPL_PRIVMSG(client.getPrefixName(), cmd[1], cmd[2]);
-			channels[cmd[1]].Brodcast(privMessage, client);
-		}
-	}
-	else
-	{
+    std::string privMessage;
+    if (cmd.size() == 1)
+        throw ERR_NORECIPIENT(client.getNickname());
+    else if (cmd[1].find(',') != std::string::npos)
+        throw ERR_TOOMANYTARGETS(client.getNickname());
+    else if (cmd.size() == 2)
+        throw ERR_NOTEXTTOSEND(client.getNickname());
+    else if (cmd[1][0] == '#' || cmd[1][0] == '&')
+    {
+        if (channels.find(cmd[1]) == channels.end())
+            throw (ERR_NOTOPLEVEL(client.getNickname()));
+        else
+        {
+            Channel& channel = channels[cmd[1]];
+            if (!channel.IsClient(client.getNickname())) {
+                client.MsgToClient(ERR_CANNOTSENDTOCHAN(client.getNickname(), cmd[1]));
+                return;
+            }
+            privMessage = RPL_PRIVMSG(client.getPrefixName(), cmd[1], cmd[2]);
+            channel.Brodcast(privMessage, client);
+        }
+    }
+    else
+    {
         try
         {
             Client targetClient = getClientNameFd(clients, cmd[1]);
-			privMessage = RPL_PRIVMSG(client.getPrefixName(), targetClient.getNickname(), cmd[2]);
-			targetClient.MsgToClient(privMessage);
+            privMessage = RPL_PRIVMSG(client.getPrefixName(), targetClient.getNickname(), cmd[2]);
+            targetClient.MsgToClient(privMessage);
         }
         catch (const std::exception& e)
         {
-			client.MsgToClient(ERR_NOSUCHNICK(client.getNickname(), cmd[1]));
+            client.MsgToClient(ERR_NOSUCHNICK(client.getNickname(), cmd[1]));
             return;
         }
 
-	}
+    }
 }
